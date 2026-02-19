@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <!-- Simple custom icon with medical cross -->
+  <rect width="192" height="192" rx="32" fill="#0b7d5c" />
+  <rect x="80" y="36" width="32" height="120" fill="#f7f4ef" />
+  <rect x="36" y="80" width="120" height="32" fill="#f7f4ef" />
+  <circle cx="144" cy="48" r="16" fill="#f2efe9" />
+</svg>
