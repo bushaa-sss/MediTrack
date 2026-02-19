@@ -1,7 +1,6 @@
 // Main Express server entry.
 require('dotenv').config();
-import path from 'path';
-import express from 'express';
+
 const express = require('express');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -19,15 +18,7 @@ const patientRoutes = require('./routes/patientRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
-const __dirname = path.resolve();
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, 'client/build')));
-
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'client/build', 'index.html'));
-  });
-}
 
 app.use(helmet());
 app.use(cors(buildCorsOptions()));
