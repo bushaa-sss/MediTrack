@@ -99,7 +99,7 @@ const Register = () => {
               id="email"
               name="email"
               type="email"
-              pattern="^[^@\\s]+@clinic\\.com$"
+              pattern="^[^@\s]+@clinic\.com$"
               placeholder=" "
               value={form.email}
               onChange={handleChange}

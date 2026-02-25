@@ -125,14 +125,71 @@ frontend/
 5. Inspect browser notifications.
 
 ## Deployment Guide
-- Backend
-  - Host on a Node.js server (Render, Railway, AWS, Azure).
-  - Provide environment variables and ensure outbound HTTPS access to FCM.
-  - Set `CORS_ORIGINS` to the deployed frontend URL.
-- Frontend
-  - Build with `npm run build`.
-  - Deploy `frontend/dist` to a static host (Netlify, Vercel, S3 + CloudFront).
-  - Ensure HTTPS is enabled and service worker scope is root.
+### Backend on AWS EC2 (Ubuntu, recommended)
+1. Launch an EC2 instance (Ubuntu 22.04+).
+2. Security Group inbound rules:
+   - `22` from your IP
+   - `80` from `0.0.0.0/0`
+   - `443` from `0.0.0.0/0`
+3. SSH into the instance and install runtime tools:
+```bash
+sudo apt update && sudo apt upgrade -y
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs nginx
+sudo npm install -g pm2
+```
+4. Deploy backend code:
+```bash
+git clone <your-repo-url>
+cd "<repo>/backend"
+npm ci --omit=dev
+cp .env.example .env
+```
+5. Configure `backend/.env` for production:
+   - `NODE_ENV=production`
+   - `PORT=5000`
+   - `MONGO_URI=<mongodb-atlas-uri>`
+   - `JWT_SECRET=<strong-random-secret>`
+   - `JWT_EXPIRES_IN=7d`
+   - `CORS_ORIGINS=https://<your-vercel-domain>,https://<your-custom-frontend-domain>`
+   - `CRON_TZ=UTC`
+   - Firebase: set `FIREBASE_SERVICE_ACCOUNT_JSON` (preferred) or `FIREBASE_SERVICE_ACCOUNT_PATH`
+6. Start backend with PM2:
+```bash
+cd "<repo>/backend"
+pm2 start ecosystem.config.cjs
+pm2 save
+pm2 startup systemd -u ubuntu --hp /home/ubuntu
+```
+7. Configure Nginx reverse proxy:
+```bash
+cd "<repo>/backend"
+sudo cp nginx-doctors-portal.conf.example /etc/nginx/sites-available/doctors-portal
+sudo ln -s /etc/nginx/sites-available/doctors-portal /etc/nginx/sites-enabled/doctors-portal
+sudo nginx -t
+sudo systemctl restart nginx
+```
+8. Update `/etc/nginx/sites-available/doctors-portal` and set your real API domain in `server_name` (for example `api.example.com`).
+9. Enable HTTPS:
+```bash
+sudo apt install -y certbot python3-certbot-nginx
+sudo certbot --nginx -d api.example.com
+```
+10. Verify backend:
+   - `GET https://api.example.com/health` should return `{ "status": "ok" }`.
+
+### Frontend on Vercel (already deployed)
+1. In Vercel project settings, set:
+   - `VITE_API_BASE_URL=https://api.example.com`
+2. Redeploy the Vercel project.
+3. Confirm requests from Vercel origin are allowed by backend CORS.
+
+### Important production notes
+- `npm run seed` deletes existing collections before inserting demo data. Do not run it on production data.
+- Report uploads are stored on local disk (`backend/uploads`). If you replace or auto-scale instances, files can be lost; migrate uploads to S3 for durability.
+
+### Optional App Runner path
+- If you prefer managed hosting later, you can use `backend/apprunner.yaml`.
 
 ## Notes
 - SMS delivery is stubbed; integrate a provider in `backend/services/smsService.js`.
