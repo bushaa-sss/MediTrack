@@ -7,14 +7,25 @@ const Patient = require('./models/Patient');
 const NotificationLog = require('./models/NotificationLog');
 const ReminderLog = require('./models/ReminderLog');
 
+const CLINIC_EMAIL_PATTERN = /@clinic\.com$/i;
+
 const seed = async () => {
   await connectDb();
 
-  const demoEmail = process.env.DEMO_EMAIL || 'demo@clinic.com';
+  const configuredDemoEmail = process.env.DEMO_EMAIL || 'demo@clinic.com';
+  const demoEmail = CLINIC_EMAIL_PATTERN.test(configuredDemoEmail)
+    ? configuredDemoEmail
+    : 'demo@clinic.com';
   const demoPassword = process.env.DEMO_PASSWORD || 'Demo1234!';
   const demoFirstName = process.env.DEMO_FIRST_NAME || 'Taylor';
   const demoLastName = process.env.DEMO_LAST_NAME || 'Demo';
   const demoUsername = process.env.DEMO_USERNAME || 'drdemo';
+
+  if (!CLINIC_EMAIL_PATTERN.test(configuredDemoEmail)) {
+    console.warn(
+      `DEMO_EMAIL "${configuredDemoEmail}" is invalid for this app. Using "${demoEmail}" instead.`
+    );
+  }
 
   // Reset collections for a clean preview environment.
   await Promise.all([
@@ -49,6 +60,7 @@ const seed = async () => {
   const patients = await Patient.create([
     {
       doctor: doctor._id,
+      mrNumber: 'MR-1001',
       name: 'Ava Hart',
       age: 32,
       gender: 'female',
@@ -73,6 +85,7 @@ const seed = async () => {
     },
     {
       doctor: doctor._id,
+      mrNumber: 'MR-1002',
       name: 'Noah Reyes',
       age: 45,
       gender: 'male',
@@ -90,6 +103,7 @@ const seed = async () => {
     },
     {
       doctor: doctor._id,
+      mrNumber: 'MR-1003',
       name: 'Maya Singh',
       age: 29,
       gender: 'female',
