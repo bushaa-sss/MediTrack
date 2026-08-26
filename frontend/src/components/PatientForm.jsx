@@ -79,7 +79,7 @@ const PatientForm = ({ initialData = {}, onSubmit, submitLabel = 'Save Patient' 
             name="phone"
             type="tel"
             inputMode="numeric"
-            pattern="^(\+9665\d{8}|05\d{8})$"
+            pattern="^(?:\+92|92|0)?3\d{9}$"
             placeholder=" "
             value={form.phone}
             onChange={handleChange}

@@ -10,7 +10,14 @@ const DoctorSchema = new mongoose.Schema(
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
     passwordHash: { type: String, required: true },
     fcmToken: { type: String, default: null },
-    timezone: { type: String, default: 'UTC', trim: true }
+    timezone: { type: String, default: 'UTC', trim: true },
+    role: {
+      type: String,
+      enum: ['doctor', 'receptionist', 'admin'],
+      default: 'doctor'
+    },
+    clinic: { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic', required: true },
+    isActive: { type: Boolean, default: true }
   },
   { timestamps: true }
 );

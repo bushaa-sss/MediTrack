@@ -13,6 +13,8 @@ import Dashboard from './pages/Dashboard';
 import AddPatient from './pages/AddPatient';
 import PatientDetails from './pages/PatientDetails';
 import Notifications from './pages/Notifications';
+import Appointments from './pages/Appointments';
+import AdminStaff from './pages/AdminStaff';
 import { getFcmToken, onMessageListener, requestNotificationPermission } from './firebase';
 import { updateFcmToken } from './services/authService';
 
@@ -219,7 +221,7 @@ const App = () => {
         <Route
           path="/patients/new"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute roles={['doctor', 'receptionist']}>
               <AddPatient />
             </ProtectedRoute>
           }
@@ -237,6 +239,22 @@ const App = () => {
           element={
             <ProtectedRoute>
               <Notifications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/appointments"
+          element={
+            <ProtectedRoute roles={['doctor', 'receptionist', 'admin']}>
+              <Appointments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/staff"
+          element={
+            <ProtectedRoute roles={['admin']}>
+              <AdminStaff />
             </ProtectedRoute>
           }
         />

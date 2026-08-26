@@ -5,6 +5,7 @@ const { getMessaging } = require('../config/firebase');
 const sendPushToDoctor = async (doctor, { title, body, data }) => {
   const log = new NotificationLog({
     doctor: doctor._id,
+    clinic: doctor.clinic,
     title,
     body,
     data,
@@ -17,25 +18,14 @@ const sendPushToDoctor = async (doctor, { title, body, data }) => {
       throw new Error('FCM not configured or doctor token missing');
     }
 
-    // await messaging.send({
-    //   token: doctor.fcmToken,
-    //   notification: { title, body },
-    //   data: data ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) : undefined
-    // });
-
     await messaging.send({
-  token: doctor.fcmToken,
-  data: {
-    title: String(title),
-    body: String(body),
-    ...(data
-      ? Object.fromEntries(
-          Object.entries(data).map(([k, v]) => [k, String(v)])
-        )
-      : {})
-  }
-});
-
+      token: doctor.fcmToken,
+      data: {
+        title: String(title),
+        body: String(body),
+        ...(data ? Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])) : {})
+      }
+    });
 
     log.success = true;
     log.sentAt = new Date();

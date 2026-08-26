@@ -35,6 +35,7 @@ const FollowUpSchema = new mongoose.Schema(
 const PatientSchema = new mongoose.Schema(
   {
     doctor: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true },
+    clinic: { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic', required: true },
     mrNumber: { type: String, required: true, trim: true },
     name: { type: String, required: true, trim: true },
     age: { type: Number, required: true, min: 0 },
@@ -43,7 +44,7 @@ const PatientSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      match: [/^(\+9665\d{8}|05\d{8})$/, 'Invalid Saudi phone number']
+      match: [/^(?:\+92|92|0)?3\d{9}$/, 'Invalid Pakistani phone number']
     },
     address: { type: String, trim: true },
     medicalHistory: { type: String, trim: true },

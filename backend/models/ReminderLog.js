@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const ReminderLogSchema = new mongoose.Schema(
   {
     doctor: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true },
+    clinic: { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic', required: true },
     patient: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient', required: true },
     channel: { type: String, enum: ['push', 'sms'], default: 'push' },
     message: { type: String, required: true },

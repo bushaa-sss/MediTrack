@@ -18,7 +18,7 @@ frontend/.env.test.local
 frontend/.env.production.local
 
 # Firebase service account key
-backend/doctorpatientmanagement-firebase-adminsdk-fbsvc-565a0130e5.json
+backend/firebase-service-account.json
 
 # Logs
 logs/

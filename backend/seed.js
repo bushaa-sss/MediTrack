@@ -2,6 +2,7 @@
 require('dotenv').config();
 const bcrypt = require('bcryptjs');
 const connectDb = require('./config/db');
+const { getDefaultClinic } = require('./services/clinicService');
 const Doctor = require('./models/Doctor');
 const Patient = require('./models/Patient');
 const NotificationLog = require('./models/NotificationLog');
@@ -35,6 +36,8 @@ const seed = async () => {
     ReminderLog.deleteMany({})
   ]);
 
+  const clinic = await getDefaultClinic();
+
   const passwordHash = await bcrypt.hash(demoPassword, 10);
   const doctor = await Doctor.create({
     firstName: demoFirstName,
@@ -42,7 +45,8 @@ const seed = async () => {
     name: `${demoFirstName} ${demoLastName}`.trim(),
     username: demoUsername.toLowerCase(),
     email: demoEmail.toLowerCase(),
-    passwordHash
+    passwordHash,
+    clinic: clinic._id
   });
 
   const inThreeDays = new Date();
@@ -60,11 +64,12 @@ const seed = async () => {
   const patients = await Patient.create([
     {
       doctor: doctor._id,
+      clinic: clinic._id,
       mrNumber: 'MR-1001',
       name: 'Ava Hart',
       age: 32,
       gender: 'female',
-      phone: '0551234567',
+      phone: '03001234567',
       address: '12 Market Street, San Diego, CA',
       medicalHistory: 'Asthma, seasonal allergies',
       prescriptions: [
@@ -85,11 +90,12 @@ const seed = async () => {
     },
     {
       doctor: doctor._id,
+      clinic: clinic._id,
       mrNumber: 'MR-1002',
       name: 'Noah Reyes',
       age: 45,
       gender: 'male',
-      phone: '0559876543',
+      phone: '03009876543',
       address: '98 Willow Ave, Austin, TX',
       medicalHistory: 'Hypertension',
       prescriptions: [
@@ -103,11 +109,12 @@ const seed = async () => {
     },
     {
       doctor: doctor._id,
+      clinic: clinic._id,
       mrNumber: 'MR-1003',
       name: 'Maya Singh',
       age: 29,
       gender: 'female',
-      phone: '0555551234',
+      phone: '03005551234',
       address: '233 Cedar Blvd, Seattle, WA',
       medicalHistory: 'Migraines',
       prescriptions: [
@@ -122,6 +129,7 @@ const seed = async () => {
 
   await NotificationLog.create({
     doctor: doctor._id,
+    clinic: clinic._id,
     title: 'Welcome to Doctor Portal',
     body: `Demo data loaded with ${patients.length} patients.`,
     data: { seeded: true },

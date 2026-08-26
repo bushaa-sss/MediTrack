@@ -25,3 +25,8 @@ export const clearFcmToken = async () => {
   const { data } = await api.delete('/api/doctors/me/fcm-token');
   return data;
 };
+
+export const getDoctors = async () => {
+  const { data } = await api.get('/api/doctors');
+  return data;
+};

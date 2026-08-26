@@ -10,10 +10,25 @@ const { sendSms } = require('../services/smsService');
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 const normalizeGender = (gender) => (typeof gender === 'string' ? gender.toLowerCase() : gender);
 
+// Prescriptions/reports are clinical data (doctor-only, per the permission
+// matrix). Route-level authorization already blocks the write endpoints for
+// non-doctors, but the shared read endpoints below return the whole patient
+// document — this strips clinical fields from the response for non-doctor
+// roles so the API doesn't leak them even if a client calls it directly,
+// without splitting the Patient schema itself.
+const CLINICAL_FIELDS = ['prescriptions', 'reports', 'followUps'];
+const stripClinicalFields = (patient, role) => {
+  if (role === 'doctor' || !patient) return patient;
+  const plain = patient.toObject ? patient.toObject() : patient;
+  CLINICAL_FIELDS.forEach((field) => delete plain[field]);
+  return plain;
+};
+
 const listPatients = async (req, res, next) => {
   try {
-    const patients = await Patient.find({ doctor: req.doctor._id }).sort({ createdAt: -1 });
-    return res.json({ patients });
+    const patients = await Patient.find({ clinic: req.doctor.clinic }).sort({ createdAt: -1 });
+    const sanitized = patients.map((patient) => stripClinicalFields(patient, req.doctor.role));
+    return res.json({ patients: sanitized });
   } catch (err) {
     next(err);
   }
@@ -29,6 +44,7 @@ const createPatient = async (req, res, next) => {
 
     const patient = await Patient.create({
       doctor: req.doctor._id,
+      clinic: req.doctor.clinic,
       mrNumber: mrNumber.toString().trim(),
       name,
       age,
@@ -38,7 +54,7 @@ const createPatient = async (req, res, next) => {
       medicalHistory
     });
 
-    return res.status(201).json({ patient });
+    return res.status(201).json({ patient: stripClinicalFields(patient, req.doctor.role) });
   } catch (err) {
     next(err);
   }
@@ -51,12 +67,12 @@ const getPatient = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid patient id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
 
-    return res.json({ patient });
+    return res.json({ patient: stripClinicalFields(patient, req.doctor.role) });
   } catch (err) {
     next(err);
   }
@@ -83,7 +99,7 @@ const updatePatient = async (req, res, next) => {
     }
 
     const patient = await Patient.findOneAndUpdate(
-      { _id: id, doctor: req.doctor._id },
+      { _id: id, clinic: req.doctor.clinic },
       updates,
       { new: true, runValidators: true }
     );
@@ -92,7 +108,7 @@ const updatePatient = async (req, res, next) => {
       return res.status(404).json({ message: 'Patient not found' });
     }
 
-    return res.json({ patient });
+    return res.json({ patient: stripClinicalFields(patient, req.doctor.role) });
   } catch (err) {
     next(err);
   }
@@ -105,7 +121,7 @@ const deletePatient = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid patient id' });
     }
 
-    const patient = await Patient.findOneAndDelete({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOneAndDelete({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -128,7 +144,7 @@ const addPrescription = async (req, res, next) => {
       return res.status(400).json({ message: 'Diagnosis is required' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -162,7 +178,7 @@ const updatePrescription = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -201,7 +217,7 @@ const deletePrescription = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -226,7 +242,7 @@ const uploadReport = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid patient id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -257,7 +273,7 @@ const getReport = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -281,7 +297,7 @@ const deleteReport = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -312,7 +328,7 @@ const sendReminder = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid patient id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -343,6 +359,7 @@ const sendReminder = async (req, res, next) => {
 
     const log = await ReminderLog.create({
       doctor: req.doctor._id,
+      clinic: req.doctor.clinic,
       patient: patient._id,
       channel,
       message,
@@ -363,13 +380,13 @@ const listReminders = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid patient id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
 
     const reminders = await ReminderLog.find({
-      doctor: req.doctor._id,
+      clinic: req.doctor.clinic,
       patient: id
     }).sort({ createdAt: -1 });
 
@@ -391,7 +408,7 @@ const addFollowUp = async (req, res, next) => {
       return res.status(400).json({ message: 'Follow-up date is required' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -424,7 +441,7 @@ const getFollowUps = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid patient id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id }).select('followUps');
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic }).select('followUps');
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -446,7 +463,7 @@ const updateFollowUp = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }
@@ -486,7 +503,7 @@ const deleteFollowUp = async (req, res, next) => {
       return res.status(400).json({ message: 'Invalid id' });
     }
 
-    const patient = await Patient.findOne({ _id: id, doctor: req.doctor._id });
+    const patient = await Patient.findOne({ _id: id, clinic: req.doctor.clinic });
     if (!patient) {
       return res.status(404).json({ message: 'Patient not found' });
     }

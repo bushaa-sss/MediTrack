@@ -3,7 +3,7 @@ const NotificationLog = require('../models/NotificationLog');
 
 const listNotifications = async (req, res, next) => {
   try {
-    const notifications = await NotificationLog.find({ doctor: req.doctor._id })
+    const notifications = await NotificationLog.find({ clinic: req.doctor.clinic })
       .sort({ createdAt: -1 })
       .limit(100);
 

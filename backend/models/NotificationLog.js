@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const NotificationLogSchema = new mongoose.Schema(
   {
     doctor: { type: mongoose.Schema.Types.ObjectId, ref: 'Doctor', required: true },
+    clinic: { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic', required: true },
     title: { type: String, required: true },
     body: { type: String, required: true },
     data: { type: mongoose.Schema.Types.Mixed },

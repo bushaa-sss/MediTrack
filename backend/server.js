@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 const connectDb = require('./config/db');
 const buildCorsOptions = require('./config/cors');
 const { initFirebase } = require('./config/firebase');
+const { ensureClinicWorkspace } = require('./services/clinicService');
 const scheduleFollowUpCron = require('./cron/followUpCron');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -16,6 +17,9 @@ const authRoutes = require('./routes/authRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const appointmentRoutes = require('./routes/appointmentRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 const app = express();
 
@@ -37,6 +41,9 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/doctors', doctorRoutes);
 app.use('/api/patients', patientRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Serve uploaded files only via authenticated routes (no public static route).
 app.use('/uploads', (req, res) => {
@@ -52,6 +59,7 @@ app.use(errorHandler);
 const port = process.env.PORT || 5000;
 
 connectDb()
+  .then(() => ensureClinicWorkspace())
   .then(() => {
     initFirebase();
     scheduleFollowUpCron();

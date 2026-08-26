@@ -18,7 +18,16 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid token' });
     }
 
+    if (doctor.isActive === false) {
+      return res.status(401).json({ message: 'This account has been deactivated' });
+    }
+
+    // req.doctor is kept for existing controllers; req.user is the same record,
+    // exposed under a role-neutral name for role/authorization middleware.
+    // The role always comes from this fresh DB read, never from the JWT payload,
+    // so a role change takes effect immediately instead of waiting for token expiry.
     req.doctor = doctor;
+    req.user = doctor;
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid or expired token' });

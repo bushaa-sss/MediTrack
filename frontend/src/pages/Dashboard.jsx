@@ -1,10 +1,25 @@
 // Dashboard shows patient list and quick actions.
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import AdminDashboard from './AdminDashboard';
 import { deletePatient, getPatients } from '../services/patientService';
+import { getDashboardSummary } from '../services/dashboardService';
 
 const Dashboard = () => {
+  const { doctor } = useContext(AuthContext);
+  if (doctor?.role === 'admin') {
+    return <AdminDashboard />;
+  }
+
+  return <PatientDashboard />;
+};
+
+const PatientDashboard = () => {
+  const { doctor } = useContext(AuthContext);
+  const role = doctor?.role || 'doctor';
   const [patients, setPatients] = useState([]);
+  const [summary, setSummary] = useState(null);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [searchMode, setSearchMode] = useState('name');
@@ -18,8 +33,18 @@ const Dashboard = () => {
     }
   };
 
+  const loadSummary = async () => {
+    try {
+      const data = await getDashboardSummary();
+      setSummary(data.summary);
+    } catch (err) {
+      // Non-critical for the page to function; the patient list below still works.
+    }
+  };
+
   useEffect(() => {
     loadPatients();
+    loadSummary();
   }, []);
 
   const handleDelete = async (id) => {
@@ -63,6 +88,64 @@ const Dashboard = () => {
           <button>Add Patient</button>
         </Link>
       </div>
+
+      {summary && (
+        <div className="grid two" style={{ marginBottom: '18px' }}>
+          <div className="card">
+            <div className="section-title">Total Patients</div>
+            <div>{summary.totalPatients}</div>
+          </div>
+          <div className="card">
+            <div className="section-title">Today's Appointments</div>
+            <div>{summary.todaysAppointments}</div>
+          </div>
+          <div className="card">
+            <div className="section-title">Upcoming Appointments</div>
+            <div>{summary.upcomingAppointments}</div>
+          </div>
+          {role === 'doctor' && (
+            <div className="card">
+              <div className="section-title">Pending Follow-ups</div>
+              <div>{summary.patientsWithPendingFollowUps} patients</div>
+            </div>
+          )}
+          {role === 'receptionist' && (
+            <div className="card">
+              <div className="section-title">Pending Appointments</div>
+              <div>{summary.pendingAppointments}</div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {role === 'doctor' && summary?.recentPrescriptions?.length > 0 && (
+        <div className="card" style={{ marginBottom: '18px' }}>
+          <div className="section-title">Recent Prescriptions</div>
+          <div className="list">
+            {summary.recentPrescriptions.map((item, index) => (
+              <div className="list-item" key={index}>
+                <strong>{item.patientName}</strong>
+                <div>{item.diagnosis}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {role === 'receptionist' && summary?.recentPatients?.length > 0 && (
+        <div className="card" style={{ marginBottom: '18px' }}>
+          <div className="section-title">Recent Registrations</div>
+          <div className="list">
+            {summary.recentPatients.map((patient) => (
+              <div className="list-item" key={patient._id}>
+                <strong>{patient.name}</strong>
+                <div>MR: {patient.mrNumber}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="search-bar">
         <select value={searchMode} onChange={(event) => setSearchMode(event.target.value)}>
           <option value="name">Search by name</option>

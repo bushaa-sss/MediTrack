@@ -3,6 +3,7 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const auth = require('../middleware/auth');
+const authorizeRoles = require('../middleware/authorizeRoles');
 const {
   listPatients,
   createPatient,
@@ -49,26 +50,40 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-router.get('/', auth, listPatients);
-router.post('/', auth, createPatient);
-router.get('/:id', auth, getPatient);
-router.put('/:id', auth, updatePatient);
-router.delete('/:id', auth, deletePatient);
+const clinicalStaff = authorizeRoles('doctor', 'receptionist', 'admin');
+const clinicalOnly = authorizeRoles('doctor', 'admin');
+const frontDeskOnly = authorizeRoles('doctor', 'receptionist');
+const doctorOnly = authorizeRoles('doctor');
 
-router.post('/:id/prescriptions', auth, addPrescription);
-router.put('/:id/prescriptions/:prescriptionId', auth, updatePrescription);
-router.delete('/:id/prescriptions/:prescriptionId', auth, deletePrescription);
+// Viewing the patient list/detail is shared by everyone. Registering/editing a
+// patient is front-desk data entry (doctor + receptionist); admin only views at
+// the administrative level. Deleting a patient is destructive, so that stays
+// doctor/admin. Prescriptions, reports, and follow-ups are clinical judgment calls
+// and stay doctor-only — admin is not treated as a doctor just because it's a
+// privileged role.
+router.get('/', auth, clinicalStaff, listPatients);
+router.post('/', auth, frontDeskOnly, createPatient);
+router.get('/:id', auth, clinicalStaff, getPatient);
+router.put('/:id', auth, frontDeskOnly, updatePatient);
+router.delete('/:id', auth, clinicalOnly, deletePatient);
 
-router.post('/:id/reports', auth, upload.single('report'), uploadReport);
-router.get('/:id/reports/:reportId', auth, getReport);
-router.delete('/:id/reports/:reportId', auth, deleteReport);
+router.post('/:id/prescriptions', auth, doctorOnly, addPrescription);
+router.put('/:id/prescriptions/:prescriptionId', auth, doctorOnly, updatePrescription);
+router.delete('/:id/prescriptions/:prescriptionId', auth, doctorOnly, deletePrescription);
 
-router.post('/:id/reminders', auth, sendReminder);
-router.get('/:id/reminders', auth, listReminders);
+router.post('/:id/reports', auth, doctorOnly, upload.single('report'), uploadReport);
+router.get('/:id/reports/:reportId', auth, doctorOnly, getReport);
+router.delete('/:id/reports/:reportId', auth, doctorOnly, deleteReport);
 
-router.post('/:id/followups', auth, addFollowUp);
-router.get('/:id/followups', auth, getFollowUps);
-router.put('/:id/followups/:followUpId', auth, updateFollowUp);
-router.delete('/:id/followups/:followUpId', auth, deleteFollowUp);
+// Sending reminders is front-desk work, so all clinical staff can use these.
+router.post('/:id/reminders', auth, clinicalStaff, sendReminder);
+router.get('/:id/reminders', auth, clinicalStaff, listReminders);
+
+// Follow-ups are tied to clinical prescriptions/diagnosis, so they stay doctor-only.
+// Front-desk scheduling lives in the separate Appointment system instead.
+router.post('/:id/followups', auth, doctorOnly, addFollowUp);
+router.get('/:id/followups', auth, doctorOnly, getFollowUps);
+router.put('/:id/followups/:followUpId', auth, doctorOnly, updateFollowUp);
+router.delete('/:id/followups/:followUpId', auth, doctorOnly, deleteFollowUp);
 
 module.exports = router;

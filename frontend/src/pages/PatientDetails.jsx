@@ -1,6 +1,7 @@
 // Patient detail page with prescriptions, reports, and reminders.
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import PatientForm from '../components/PatientForm';
 import PrescriptionForm from '../components/PrescriptionForm';
 import ReportUpload from '../components/ReportUpload';
@@ -19,6 +20,10 @@ import {
 
 const PatientDetails = () => {
   const { id } = useParams();
+  const { doctor } = useContext(AuthContext);
+  const role = doctor?.role || 'doctor';
+  const canEditBasicInfo = role === 'doctor' || role === 'receptionist';
+  const canAccessClinicalData = role === 'doctor';
   const [patient, setPatient] = useState(null);
   const [reminders, setReminders] = useState([]);
   const [notice, setNotice] = useState('');
@@ -101,56 +106,73 @@ const PatientDetails = () => {
   return (
     <div className="container">
       {notice && <div className="notice">{notice}</div>}
-      <PatientForm initialData={patient} onSubmit={handleUpdate} submitLabel="Update Patient" />
-      <PrescriptionForm onSubmit={handlePrescription} />
-      <FollowUpForm patientId={patient._id} />
-      <ReportUpload onUpload={handleUpload} />
-
-      <div className="card">
-        <div className="section-title">Prescriptions</div>
-        <div className="list">
-          {patient.prescriptions.length === 0 && <div className="notice">No prescriptions yet.</div>}
-          {patient.prescriptions.map((prescription) => (
-            <div className="list-item" key={prescription._id}>
-              <strong>{prescription.diagnosis}</strong>
-              <div>Medicines: {prescription.medicines?.join(', ') || 'None'}</div>
-              <div>Notes: {prescription.notes || 'No notes'}</div>
-              <div>
-                Follow-up:{' '}
-                {prescription.followUpDate
-                  ? new Date(prescription.followUpDate).toLocaleDateString()
-                  : 'Not scheduled'}
-              </div>
-              <div className="inline-actions">
-                <button className="secondary" onClick={() => handleDeletePrescription(prescription._id)}>
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+      {canEditBasicInfo ? (
+        <PatientForm initialData={patient} onSubmit={handleUpdate} submitLabel="Update Patient" />
+      ) : (
+        <div className="card">
+          <div className="section-title">Patient Info</div>
+          <div>Name: {patient.name}</div>
+          <div>MR Number: {patient.mrNumber}</div>
+          <div>Age: {patient.age}</div>
+          <div>Gender: {patient.gender}</div>
+          <div>Phone: {patient.phone}</div>
+          <div>Address: {patient.address || 'N/A'}</div>
         </div>
-      </div>
+      )}
 
-      <div className="card">
-        <div className="section-title">Reports</div>
-        <div className="list">
-          {patient.reports.length === 0 && <div className="notice">No reports uploaded.</div>}
-          {patient.reports.map((report) => (
-            <div className="list-item" key={report._id}>
-              <strong>{report.originalName}</strong>
-              <div>Uploaded {new Date(report.uploadedAt).toLocaleString()}</div>
-              <div className="inline-actions">
-                <button className="secondary" onClick={() => handleDownloadReport(report._id, report.originalName)}>
-                  Download
-                </button>
-                <button className="danger" onClick={() => handleDeleteReport(report._id)}>
-                  Delete
-                </button>
-              </div>
+      {canAccessClinicalData && (
+        <>
+          <PrescriptionForm onSubmit={handlePrescription} />
+          <FollowUpForm patientId={patient._id} />
+          <ReportUpload onUpload={handleUpload} />
+
+          <div className="card">
+            <div className="section-title">Prescriptions</div>
+            <div className="list">
+              {patient.prescriptions.length === 0 && <div className="notice">No prescriptions yet.</div>}
+              {patient.prescriptions.map((prescription) => (
+                <div className="list-item" key={prescription._id}>
+                  <strong>{prescription.diagnosis}</strong>
+                  <div>Medicines: {prescription.medicines?.join(', ') || 'None'}</div>
+                  <div>Notes: {prescription.notes || 'No notes'}</div>
+                  <div>
+                    Follow-up:{' '}
+                    {prescription.followUpDate
+                      ? new Date(prescription.followUpDate).toLocaleDateString()
+                      : 'Not scheduled'}
+                  </div>
+                  <div className="inline-actions">
+                    <button className="secondary" onClick={() => handleDeletePrescription(prescription._id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+
+          <div className="card">
+            <div className="section-title">Reports</div>
+            <div className="list">
+              {patient.reports.length === 0 && <div className="notice">No reports uploaded.</div>}
+              {patient.reports.map((report) => (
+                <div className="list-item" key={report._id}>
+                  <strong>{report.originalName}</strong>
+                  <div>Uploaded {new Date(report.uploadedAt).toLocaleString()}</div>
+                  <div className="inline-actions">
+                    <button className="secondary" onClick={() => handleDownloadReport(report._id, report.originalName)}>
+                      Download
+                    </button>
+                    <button className="danger" onClick={() => handleDeleteReport(report._id)}>
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
 
       <div className="card">
         <div className="section-title">Patient Reminders</div>

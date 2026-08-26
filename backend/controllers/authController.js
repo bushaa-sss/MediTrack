@@ -2,13 +2,17 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Doctor = require('../models/Doctor');
+const { getDefaultClinic } = require('../services/clinicService');
 
 const isClinicEmail = (email) => /@clinic\.com$/i.test(email || '');
 const isValidUsername = (username) => /^[a-zA-Z0-9._-]{3,20}$/.test(username || '');
 
-const signToken = (doctorId) => {
+const signToken = (doctor) => {
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
-  return jwt.sign({ id: doctorId }, process.env.JWT_SECRET, { expiresIn });
+  // `id` is kept for backwards compatibility with tokens issued before roles existed;
+  // `role` is included so it's visible on the token, but req.doctor.role (loaded fresh
+  // from the DB on every request in middleware/auth.js) stays the source of truth.
+  return jwt.sign({ id: doctor._id, role: doctor.role }, process.env.JWT_SECRET, { expiresIn });
 };
 
 const register = async (req, res, next) => {
@@ -42,6 +46,7 @@ const register = async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const clinic = await getDefaultClinic();
     const doctor = await Doctor.create({
       firstName,
       lastName,
@@ -49,10 +54,11 @@ const register = async (req, res, next) => {
       username: username.toLowerCase(),
       email: email.toLowerCase(),
       passwordHash,
-      timezone: timezone || 'UTC'
+      timezone: timezone || 'UTC',
+      clinic: clinic._id
     });
 
-    const token = signToken(doctor._id);
+    const token = signToken(doctor);
     return res.status(201).json({
       token,
       doctor: {
@@ -61,7 +67,8 @@ const register = async (req, res, next) => {
         lastName: doctor.lastName,
         name: doctor.name,
         username: doctor.username,
-        email: doctor.email
+        email: doctor.email,
+        role: doctor.role
       }
     });
   } catch (err) {
@@ -96,12 +103,16 @@ const login = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    if (doctor.isActive === false) {
+      return res.status(401).json({ message: 'This account has been deactivated' });
+    }
+
     const valid = await bcrypt.compare(password, doctor.passwordHash);
     if (!valid) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    const token = signToken(doctor._id);
+    const token = signToken(doctor);
     return res.json({
       token,
       doctor: {
@@ -110,7 +121,8 @@ const login = async (req, res, next) => {
         lastName: doctor.lastName,
         name: doctor.name,
         username: doctor.username,
-        email: doctor.email
+        email: doctor.email,
+        role: doctor.role
       }
     });
   } catch (err) {
@@ -118,4 +130,4 @@ const login = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login };
+module.exports = { register, login, isClinicEmail, isValidUsername };

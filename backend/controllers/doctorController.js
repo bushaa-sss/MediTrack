@@ -47,4 +47,18 @@ const clearFcmToken = async (req, res, next) => {
   }
 };
 
-module.exports = { getMe, updateFcmToken, clearFcmToken };
+// Lightweight, read-only listing of clinic doctors (not other roles) so any
+// clinical staff can populate a doctor picker, e.g. when booking an appointment.
+const listDoctors = async (req, res, next) => {
+  try {
+    const doctors = await Doctor.find({ clinic: req.doctor.clinic, role: 'doctor' })
+      .select('firstName lastName name _id')
+      .sort({ name: 1 });
+
+    return res.json({ doctors });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getMe, updateFcmToken, clearFcmToken, listDoctors };
