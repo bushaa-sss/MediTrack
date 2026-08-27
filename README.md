@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # MediTrack — Clinic Management System
 
 ## System Architecture
@@ -235,3 +236,6 @@ npm run create-admin -- admin@clinic.com <strong-password> <FirstName> <LastName
 - SMS delivery is stubbed; integrate a provider in `backend/services/smsService.js`.
 - For production, rotate JWT secrets regularly and enable a stronger password policy.
 - Multi-clinic tenancy is intentionally out of scope — every deployment currently shares one `Clinic` workspace.
+=======
+# MediTrack
+>>>>>>> ce7711c8a4c5d4b61e24a56bf23dfce52a18e58d
