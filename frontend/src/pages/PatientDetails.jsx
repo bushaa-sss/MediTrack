@@ -23,7 +23,8 @@ const PatientDetails = () => {
   const { doctor } = useContext(AuthContext);
   const role = doctor?.role || 'doctor';
   const canEditBasicInfo = role === 'doctor' || role === 'receptionist';
-  const canAccessClinicalData = role === 'doctor';
+  const canAccessClinicalData = role === 'doctor' || role === 'demo';
+  const canEditClinicalData = role === 'doctor';
   const [patient, setPatient] = useState(null);
   const [reminders, setReminders] = useState([]);
   const [notice, setNotice] = useState('');
@@ -122,9 +123,13 @@ const PatientDetails = () => {
 
       {canAccessClinicalData && (
         <>
-          <PrescriptionForm onSubmit={handlePrescription} />
-          <FollowUpForm patientId={patient._id} />
-          <ReportUpload onUpload={handleUpload} />
+          {canEditClinicalData && (
+            <>
+              <PrescriptionForm onSubmit={handlePrescription} />
+              <FollowUpForm patientId={patient._id} />
+              <ReportUpload onUpload={handleUpload} />
+            </>
+          )}
 
           <div className="card">
             <div className="section-title">Prescriptions</div>
@@ -141,11 +146,13 @@ const PatientDetails = () => {
                       ? new Date(prescription.followUpDate).toLocaleDateString()
                       : 'Not scheduled'}
                   </div>
-                  <div className="inline-actions">
-                    <button className="secondary" onClick={() => handleDeletePrescription(prescription._id)}>
-                      Delete
-                    </button>
-                  </div>
+                  {canEditClinicalData && (
+                    <div className="inline-actions">
+                      <button className="secondary" onClick={() => handleDeletePrescription(prescription._id)}>
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -163,9 +170,11 @@ const PatientDetails = () => {
                     <button className="secondary" onClick={() => handleDownloadReport(report._id, report.originalName)}>
                       Download
                     </button>
-                    <button className="danger" onClick={() => handleDeleteReport(report._id)}>
-                      Delete
-                    </button>
+                    {canEditClinicalData && (
+                      <button className="danger" onClick={() => handleDeleteReport(report._id)}>
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -176,7 +185,7 @@ const PatientDetails = () => {
 
       <div className="card">
         <div className="section-title">Patient Reminders</div>
-        <button onClick={handleSendReminder}>Send Reminder</button>
+        {role !== 'demo' && <button onClick={handleSendReminder}>Send Reminder</button>}
         <div className="list" style={{ marginTop: '12px' }}>
           {reminders.length === 0 && <div className="notice">No reminders yet.</div>}
           {reminders.map((reminder) => (

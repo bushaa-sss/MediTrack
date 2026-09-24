@@ -8,6 +8,10 @@ const Login = () => {
   const { login } = useContext(AuthContext);
   const [form, setForm] = useState({ identifier: '', password: '' });
   const [error, setError] = useState('');
+  const [demoLoading, setDemoLoading] = useState(false);
+  const demoApiAvailable = Boolean(import.meta.env.VITE_DEMO_API_BASE_URL);
+  const demoEmail = import.meta.env.VITE_DEMO_LOGIN_EMAIL || 'publicdemo@clinic.com';
+  const demoPassword = import.meta.env.VITE_DEMO_LOGIN_PASSWORD || 'PreviewOnly2026!';
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -16,6 +20,19 @@ const Login = () => {
       return;
     }
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDemoLogin = async () => {
+    setError('');
+    setDemoLoading(true);
+    try {
+      await login({ email: demoEmail, password: demoPassword }, { demo: true });
+      navigate('/');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Demo is temporarily unavailable');
+    } finally {
+      setDemoLoading(false);
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -82,6 +99,17 @@ const Login = () => {
           </div>
           <button type="submit">Login</button>
         </form>
+        {demoApiAvailable && (
+          <div className="card" style={{ marginTop: '18px' }}>
+            <div className="section-title">Public demo (sample data only)</div>
+            <p>Read-only access with synthetic patient records. Do not enter real patient information.</p>
+            <div>Email: <strong>{demoEmail}</strong></div>
+            <div>Password: <strong>{demoPassword}</strong></div>
+            <button type="button" className="secondary" onClick={handleDemoLogin} disabled={demoLoading}>
+              {demoLoading ? 'Opening demo...' : 'Open read-only demo'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

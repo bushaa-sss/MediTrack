@@ -21,6 +21,9 @@ const NAV_LINKS_BY_ROLE = {
     { to: '/appointments', label: 'Appointments' },
     { to: '/admin/staff', label: 'Users' },
     { to: '/notifications', label: 'Notifications' }
+  ],
+  demo: [
+    { to: '/', label: 'Sample Patients' }
   ]
 };
 

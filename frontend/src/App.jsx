@@ -31,6 +31,7 @@ const App = () => {
   const toastTimers = useRef(new Map());
   const toastId = useRef(0);
   const doctorId = doctor?.id || doctor?._id || '';
+  const doctorRole = doctor?.role || '';
   const hasDoctor = Boolean(doctor);
   const [toasts, setToasts] = useState([]);
   const isDev = import.meta.env.DEV;
@@ -108,6 +109,7 @@ const App = () => {
       localStorage.removeItem(FCM_LAST_TIMEZONE_KEY);
       return;
     }
+    if (doctorRole === 'demo') return;
 
     let isActive = true;
 
@@ -171,7 +173,7 @@ const App = () => {
     return () => {
       isActive = false;
     };
-  }, [token, doctorId, hasDoctor, loading]);
+  }, [token, doctorId, doctorRole, hasDoctor, loading]);
 
   useEffect(() => {
     // Foreground messages arrive here; background notifications are handled by the service worker.

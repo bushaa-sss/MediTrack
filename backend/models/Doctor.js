@@ -13,7 +13,7 @@ const DoctorSchema = new mongoose.Schema(
     timezone: { type: String, default: 'UTC', trim: true },
     role: {
       type: String,
-      enum: ['doctor', 'receptionist', 'admin'],
+      enum: ['doctor', 'receptionist', 'admin', 'demo'],
       default: 'doctor'
     },
     clinic: { type: mongoose.Schema.Types.ObjectId, ref: 'Clinic', required: true },

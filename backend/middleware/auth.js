@@ -22,6 +22,14 @@ const auth = async (req, res, next) => {
       return res.status(401).json({ message: 'This account has been deactivated' });
     }
 
+    if (doctor.role === 'demo' && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      return res.status(403).json({ message: 'The public demo account is read-only' });
+    }
+
+    if (process.env.DEMO_MODE === 'true' && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+      return res.status(403).json({ message: 'The public demo service is read-only' });
+    }
+
     // req.doctor is kept for existing controllers; req.user is the same record,
     // exposed under a role-neutral name for role/authorization middleware.
     // The role always comes from this fresh DB read, never from the JWT payload,

@@ -10,6 +10,8 @@ const connectDb = require('./config/db');
 const buildCorsOptions = require('./config/cors');
 const { initFirebase } = require('./config/firebase');
 const { ensureClinicWorkspace } = require('./services/clinicService');
+const seedPublicDemo = require('./services/seedPublicDemo');
+const mongoose = require('mongoose');
 const scheduleFollowUpCron = require('./cron/followUpCron');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -84,10 +86,24 @@ app.use(errorHandler);
 const port = process.env.PORT || 5000;
 
 connectDb()
-  .then(() => ensureClinicWorkspace())
+  .then(async () => {
+    if (process.env.DEMO_MODE === 'true') {
+      const expectedDatabase = process.env.DEMO_DATABASE_NAME || 'meditrack_demo';
+      const actualDatabase = mongoose.connection.db.databaseName;
+      if (actualDatabase !== expectedDatabase) {
+        throw new Error(`DEMO_MODE requires MongoDB database "${expectedDatabase}"; connected to "${actualDatabase}"`);
+      }
+    }
+    await ensureClinicWorkspace();
+    if (process.env.DEMO_MODE === 'true') {
+      await seedPublicDemo();
+    }
+  })
   .then(() => {
-    initFirebase();
-    scheduleFollowUpCron();
+    if (process.env.DEMO_MODE !== 'true') {
+      initFirebase();
+      scheduleFollowUpCron();
+    }
 
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);

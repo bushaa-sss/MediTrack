@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }) => {
         setDoctor(data.doctor);
       } catch (err) {
         localStorage.removeItem('token');
+        localStorage.removeItem('apiMode');
         setToken(null);
       } finally {
         setLoading(false);
@@ -30,8 +31,13 @@ export const AuthProvider = ({ children }) => {
     hydrate();
   }, [token]);
 
-  const login = async (payload) => {
-    const data = await loginDoctor(payload);
+  const login = async (payload, { demo = false } = {}) => {
+    const data = await loginDoctor(payload, { demo });
+    if (demo) {
+      localStorage.setItem('apiMode', 'demo');
+    } else {
+      localStorage.removeItem('apiMode');
+    }
     localStorage.setItem('token', data.token);
     setToken(data.token);
     setDoctor(data.doctor);
@@ -40,6 +46,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (payload) => {
     const data = await registerDoctor(payload);
+    localStorage.removeItem('apiMode');
     localStorage.setItem('token', data.token);
     setToken(data.token);
     setDoctor(data.doctor);
@@ -56,6 +63,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     localStorage.removeItem('token');
+    localStorage.removeItem('apiMode');
     setToken(null);
     setDoctor(null);
   };

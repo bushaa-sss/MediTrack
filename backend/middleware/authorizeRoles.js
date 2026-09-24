@@ -7,6 +7,13 @@ const authorizeRoles = (...allowedRoles) => (req, res, next) => {
   }
 
   const role = req.user.role || 'doctor';
+  if (role === 'demo') {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method) && allowedRoles.includes('doctor')) {
+      return next();
+    }
+    return res.status(403).json({ message: 'The public demo account is read-only' });
+  }
+
   if (!allowedRoles.includes(role)) {
     return res.status(403).json({ message: 'You do not have permission to perform this action' });
   }

@@ -18,7 +18,7 @@ const normalizeGender = (gender) => (typeof gender === 'string' ? gender.toLower
 // without splitting the Patient schema itself.
 const CLINICAL_FIELDS = ['prescriptions', 'reports', 'followUps'];
 const stripClinicalFields = (patient, role) => {
-  if (role === 'doctor' || !patient) return patient;
+  if (role === 'doctor' || (role === 'demo' && process.env.DEMO_MODE === 'true') || !patient) return patient;
   const plain = patient.toObject ? patient.toObject() : patient;
   CLINICAL_FIELDS.forEach((field) => delete plain[field]);
   return plain;

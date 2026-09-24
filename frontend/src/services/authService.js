@@ -2,12 +2,12 @@
 import api from './api';
 
 export const registerDoctor = async (payload) => {
-  const { data } = await api.post('/api/auth/register', payload);
+  const { data } = await api.post('/api/auth/register', payload, { forcePrimaryApi: true });
   return data;
 };
 
-export const loginDoctor = async (payload) => {
-  const { data } = await api.post('/api/auth/login', payload);
+export const loginDoctor = async (payload, { demo = false } = {}) => {
+  const { data } = await api.post('/api/auth/login', payload, { useDemoApi: demo });
   return data;
 };
 

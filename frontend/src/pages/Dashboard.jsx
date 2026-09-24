@@ -84,10 +84,14 @@ const PatientDashboard = () => {
           <h1>Patients</h1>
           <p>Track appointments, prescriptions, and follow-ups in one view.</p>
         </div>
-        <Link to="/patients/new">
-          <button>Add Patient</button>
-        </Link>
+        {role !== 'demo' && (
+          <Link to="/patients/new">
+            <button>Add Patient</button>
+          </Link>
+        )}
       </div>
+
+      {role === 'demo' && <div className="notice">Read-only public demo. All displayed records are synthetic examples.</div>}
 
       {summary && (
         <div className="grid two" style={{ marginBottom: '18px' }}>
@@ -203,9 +207,11 @@ const PatientDashboard = () => {
                 <Link to={`/patients/${patient._id}`}>
                   <button className="secondary">View</button>
                 </Link>
-                <button className="danger" onClick={() => handleDelete(patient._id)}>
-                  Delete
-                </button>
+                {role !== 'demo' && (
+                  <button className="danger" onClick={() => handleDelete(patient._id)}>
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
             );

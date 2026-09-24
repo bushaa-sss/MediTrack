@@ -17,6 +17,10 @@ const signToken = (doctor) => {
 
 const register = async (req, res, next) => {
   try {
+    if (process.env.DEMO_MODE === 'true') {
+      return res.status(403).json({ message: 'Registration is disabled in the public demo' });
+    }
+
     const { firstName, lastName, username, email, password, timezone } = req.body;
 
     if (!firstName || !lastName || !username || !email || !password) {
