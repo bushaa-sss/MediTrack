@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://meditrack-vk5.onrender.com/api/:path*"
+      "destination": "https://meditrack-vkw5.onrender.com/api/:path*"
     }
   ]
 }
