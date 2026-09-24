@@ -6,12 +6,15 @@ import { AuthContext } from '../context/AuthContext';
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
-  const [form, setForm] = useState({ identifier: '', password: '' });
+  const demoApiAvailable = Boolean(import.meta.env.VITE_DEMO_API_BASE_URL);
+  const demoEmail = (import.meta.env.VITE_DEMO_LOGIN_EMAIL || 'publicdemo@clinic.com').toLowerCase();
+  const demoPassword = import.meta.env.VITE_DEMO_LOGIN_PASSWORD || 'PreviewOnly2026!';
+  const [form, setForm] = useState({
+    identifier: demoApiAvailable ? demoEmail : '',
+    password: demoApiAvailable ? demoPassword : ''
+  });
   const [error, setError] = useState('');
   const [demoLoading, setDemoLoading] = useState(false);
-  const demoApiAvailable = Boolean(import.meta.env.VITE_DEMO_API_BASE_URL);
-  const demoEmail = import.meta.env.VITE_DEMO_LOGIN_EMAIL || 'publicdemo@clinic.com';
-  const demoPassword = import.meta.env.VITE_DEMO_LOGIN_PASSWORD || 'PreviewOnly2026!';
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -54,11 +57,17 @@ const Login = () => {
         return;
       }
 
+      const isPublicDemoLogin = identifier === demoEmail && form.password === demoPassword;
+      if (isPublicDemoLogin && !demoApiAvailable) {
+        setError('The public demo service is not configured yet.');
+        return;
+      }
+
       await login({
         email: identifier.includes('@') ? identifier : undefined,
         username: !identifier.includes('@') ? identifier : undefined,
         password: form.password
-      });
+      }, { demo: isPublicDemoLogin });
       navigate('/');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
