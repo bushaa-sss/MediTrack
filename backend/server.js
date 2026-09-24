@@ -26,8 +26,31 @@ const app = express();
 
 app.use(helmet());
 const corsOptions = buildCorsOptions();
+app.options('*', (req, res) => {
+  const origin = req.get('Origin');
+  const allowlist = (process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  if (origin && allowlist.length > 0 && !allowlist.includes(origin)) {
+    return res.status(403).json({ message: 'Origin not allowed' });
+  }
+
+  if (origin) {
+    res.header('Access-Control-Allow-Origin', origin);
+    res.header('Vary', 'Origin');
+    res.header('Access-Control-Allow-Credentials', 'true');
+  }
+
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.header(
+    'Access-Control-Allow-Headers',
+    req.get('Access-Control-Request-Headers') || 'Content-Type,Authorization'
+  );
+  return res.sendStatus(204);
+});
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
