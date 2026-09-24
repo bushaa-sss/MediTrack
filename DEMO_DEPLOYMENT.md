@@ -43,7 +43,7 @@ VITE_DEMO_LOGIN_EMAIL=publicdemo@clinic.com
 VITE_DEMO_LOGIN_PASSWORD=PreviewOnly2026!
 ```
 
-Keep the existing `VITE_API_BASE_URL` configuration for the production app unchanged. Redeploy Vercel after saving these variables. The login page then shows the demo credentials and an **Open read-only demo** button.
+Keep the existing `VITE_API_BASE_URL` configuration for the production app unchanged. Redeploy Vercel after saving these variables. The login page shows the demo credentials and an **Open read-only demo** button.
 
 ## 4. Verify
 
